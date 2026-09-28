@@ -1,0 +1,24 @@
+---
+tier: T2  # 随 dev-workflow 主 skill
+---
+
+# git 推送排障
+
+> 2026-09-25 从 SKILL.md 整节搬出，内容一条未删。
+
+---
+
+## git 推送排障
+
+
+- **no upstream branch（历史重写后）**：filter-repo/历史重写会丢 `branch.main` 的 upstream 配置——`git push` 报 no upstream、remote-tracking ref 可能被清空。**`git fetch` 只建 remote-tracking ref、不会自动设 branch tracking**——fetch 后 `git push` 依然报 no upstream。
+- **自动补推脚本必须自愈（2026-08-09 git_auto_repush.py 实战）**：脚本先查 `@{u}..HEAD`，无 tracking ref 时 fetch → 重查——fetch 不设 upstream，`@{u}` 永远无效，**脚本永远走不到 push，网络恢复也推不出去**。修复：fetch 成功后补 `git branch --set-upstream-to=origin/main main`（本地操作不需联网），成功再继续；自愈失败静默等下次 tick。排查顺序：`git branch -vv` 看 upstream → `git remote -v` 看 remote → `ls .git/refs/remotes/` 看 tracking ref 是否全空。
+- **推送要有界，禁裸 `git push`；推不上不重试（2026-09-17 用户定）**：裸 push 的特性是**要么秒回、要么永远不回**——GitHub TLS 抽风时会静默挂死（实测卡到外层 180s 超时才被杀，一轮汇报被拖掉三分钟）。日常入口走 `bin/gitpush`：**单次尝试**（默认 20s 上限，`--timeout N` 可调），**失败即收手**——打印本地 HEAD + 未提交改动数，报「已本地提交、未推 + 本地提交号」；`--status` 只看落后几个提交、`--quiet` 只在失败时说话。**推送是尽力而为，本地 commit 才算交付**——别为推上去反复重试（后台 auto_repush 每 30min 兜底）；确实要硬推才单独用 `bin/gitpush-api`（走 REST API 重放提交，github.com 不通时也能上）。再给 git 层加快速失败：`git config http.lowSpeedLimit 1000` + `git config http.lowSpeedTime 10`（速率掉到 1KB/s 以下满 10 秒主动断连），专治「看着在传其实不动」的半死连接。**同一原则适用于任何新写的网络调用 CLI：单次尝试 + 单步超时上限 + 失败非零退出；无期限默认与自动重试都不要。**
+- **认证失败「could not read Password」→ 固化 askpass（2026-08-09 实战）**：远程 URL 只带用户名（`https://<user>@github.com/...`）时 git 会要密码——用 `core.askPass` 指向一个脚本，优先环境变量、后备 `credman get GITHUB_TOKEN`（token 不落盘）。global 配置让 cron/后台进程（git_auto_repush）也自动生效。验证：`env -u GITHUB_TOKEN <脚本> | head -c 10`。
+- **fetch 超时（TLS 断/大对象）→ GitHub REST API 绕过（2026-08-09 实战）**：`git fetch` 要传 pack 对象，网络不稳时反复超时——但 `ls-remote` 能通、push 能连（被逻辑拒绝）时，用 GitHub REST API 拿远程状态：`/commits/main` 拿远程 HEAD、`/commits/{sha}` 拿 parents+files 判断分叉性质、`/contents/{path}?ref={sha}` 拉远程文件内容（base64 解码）对比本地等价性。⚠️ **`commits/{ref}` 返回单个 commit 对象不是数组**——脚本里先 `isinstance(d, dict)` 判断。
+- **历史重写分叉（push rejected fetch first）→ 显式 lease 强推（2026-08-09 实战）**：本地没有远程对象 + 提交链不重叠 = filter-repo 历史重写后的分叉（远程=旧链、本地=新链），rebase 会因两棵不相关树冲突。正解：`git push --force-with-lease=main:<远程HEAD sha>`——lease 期望值用 API 拿，**不 fetch 也能安全强推**（远程 ref 变则拒绝）。**强推前必须验证内容等价**：对比 commit message + API 拉远程文件与本地文件对比（本地版更长=补充后新版，覆盖安全）；远程有本地缺失的独特内容就别强推。
+- **推送做减法（2026-08-09 用户「git的推送问题可以优化一下的：做减法」）**：把每轮手动参数一次性固化进 `~/.gitconfig`，日常就裸 `git push`：① `http.version HTTP/1.1`（省 `-c http.version=HTTP/1.1`）② `push.autoSetupRemote true`（省 `--set-upstream`，新分支自动设上游）③ `core.askPass`（认证，见上）。固化后验证：`git push` 输出 `Everything up-to-date` + `branch 'main' set up to track 'origin/main'`。auto_repush 脚本同步删冗余 `-c http.version` 参数（保留 connectTimeout/lowSpeedLimit 快速失败参数，这是脚本特有策略不是全局配置）；改完 `python3 scripts/git_auto_repush.py` 退出 0 无输出=正常（无事静默）。**做减法方向：把「每次重复的手动参数」固化进配置/脚本，不是加 alias 或加文档**。再进一步：日常推送入口已收成 `bin/gitpush`（阶梯+预算，见上条），**裸 `git push` 不再作为默认动作**。
+- **GitHub 大文件下载：git clone 超时 → tarball + gh-proxy（2026-08-14 实测）**：NAS 上 GitHub git 协议不稳定（clone 300s 超时、目录没留下），codeload tarball 直连也慢（~20KB/s）。**gh-proxy.com 加速通道 ~800KB/s（40 倍）**：`curl -sL --retry 5 "https://gh-proxy.com/https://codeload.github.com/<owner>/<repo>/tar.gz/refs/heads/<branch>" -o /tmp/x.tar.gz && tar xzf`。备用通道 ghfast.top / ghproxy.net 当日已失效——测速再选（`timeout 20 curl -sL --max-time 18 <proxy> -o /tmp/test.bin` 比大小）。解压后目录名是 `<repo>-<branch>`，记得 mv 成正式名。**只取包内几个文件时要带 `--wildcards`**：`tar xzf x.tar.gz -C out --wildcards '*/public/scripts/foo.js'`——不给这个开关，tar 把 `*` 当字面文件名，报 `Pattern matching characters used in file names` + `Not found in archive`，看着像下载错包，其实只是参数缺了。
+- **后台进程不继承前台 PATH（2026-08-14 实测）**：Hermes background terminal 是独立 shell，前台 `export`/`npm i -g` 装的全局命令（如 pnpm 在 <数据根>/.npm-global/bin）后台会 `command not found`。后台命令必须前缀 `export PATH="<全局bin目录>:$PATH"`。排查：前台 `which <cmd>` 有、后台没有 = PATH 问题，不是没装。
+- **提交范围自检（2026-08-24 实战）**：多会话并行时 `git add skills/` 这类目录级 add 会把**并行任务/子代理的改动**一起 staged（本批 skill 精简提交差点带上 dev-workflow/environment-hygiene/knowledge-persistence 等别人的修改）。提交前 `git status --short` 核对，无关文件 `git restore --staged <path>` 剔除，只提交本次任务相关；有 sibling 修改警告（"was modified by sibling subagent"）的文件更要注意先读再动。**误用 `git add -A` 已把任务外遗留改动打包进 commit 时**（2026-09-06 实战）：`git reset --soft HEAD~1` 撤销 commit 保留改动 → `git restore --staged .` 清暂存 → 只 `git add` 本任务路径 → 重新 commit——任务外改动回到未提交状态即可，勿留在自己的提交里。
+- **建仓/推送后一律读回复核，别信 HTTP 响应码**：REST 建仓可能回 `500`/`502` 而仓库**其实已经建成**（重试只会拿到 `422 name already exists`）；`api.github.com` 常通 ≠ `github.com:443` 能 push（TLS 断/超时），两条路分开判定。推送完用 API 拉文件清单/最新提交核对，别只看 push 退出码——建仓与推送都可能「看着失败其实成功」。**本机最省的落地判据是 `git status -sb` 首行**：显示 `## main...origin/main`（不带 `[ahead N]`）= 已落地——推送成功会更新远端跟踪 ref，一条 status 就验完，不必拉 API。空仓初始化必须 `git init -b main`（不带 `-b` 默认 master，之后 `push origin main` 报 `src refspec main does not match any`）+ 本地设 user.name/email（新仓库不继承）
