@@ -26,7 +26,7 @@ curl -sI --connect-timeout 5 "https://api.example.com" 2>&1 | head -3
 
 ## ⚠️ 环境变量不随 terminal 继承（2026-08-14 实测）
 
-Hermes `.env` 里的变量（`XIAOMI_API_KEY` / `DEEPSEEK_API_KEY` 等）**不会自动 export 到 terminal 子进程**。Python `os.environ.get()` 拿到空值 ≠ key 不存在。
+Hermes `.env` 里的变量（`<厂商>_API_KEY`，如 `DEEPSEEK_API_KEY` 等）**不会自动 export 到 terminal 子进程**。Python `os.environ.get()` 拿到空值 ≠ key 不存在。
 
 **正确姿势**：从 `.env` 文件直接读取：
 ```python
@@ -36,10 +36,10 @@ with open("<数据根>/.env") as f:
         if "=" in line and not line.startswith("#"):
             k, v = line.strip().split("=", 1)
             env[k] = v
-api_key = env.get("XIAOMI_API_KEY", "")
+api_key = env.get("<厂商>_API_KEY", "")
 ```
 
-Shell：`grep '^XIAOMI_API_KEY=' <数据根>/.env | cut -d= -f2`
+Shell：`grep '^<厂商>_API_KEY=' <数据根>/.env | cut -d= -f2`
 
 **排查**：`python3 -c "import os; print(os.environ.get('KEY', 'NOT SET'))"` — 输出 `NOT SET` = 继承问题，不是 key 不存在。
 
