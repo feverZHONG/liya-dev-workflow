@@ -35,7 +35,7 @@ description: 开发全流程——从环境侦查到代码提交，含迭代式�
 | 🔴 TDD 红绿重构 | 先写测试再写代码 | `references/tdd.md` |
 | 🔄 迭代式脚本 | 处理真实数据的脚本：写了就跑、暴露问题就修 | `references/iterative-script-dev.md` |
 | ✂️ 脚本化减法 | 盘点技能库哪些重复劳动可抽脚本；候选判断+实例清单 | `references/scriptification-audit-method.md` |
-| 🛠️ CLI 落地踩坑 | 建 CLI 的工程细节：--help 处理/BrokenPipe/HTML去标签/gitignore判断/验收清单 + symlink 覆盖坑/子命令黑名单闸门 + 输出按调用者照抄设计（别让调用者现算）+ 散装脚本收「统一入口」（只分发不合并、数据根参数化、换空根实跑验收）+ 子脚本伪交互提示（父入口给 DEVNULL 时 input() 每次吐一行垃圾）+ 报告指标口径分层（模拟数/实测数分写） | `references/cli-authoring-pitfalls.md` |
+| 🛠️ CLI 落地踩坑 | 建 CLI 的工程细节：--help 处理/BrokenPipe/HTML去标签/gitignore判断/验收清单 + symlink 覆盖坑/子命令黑名单闸门 + 输出按调用者照抄设计（别让调用者现算）+ 散装脚本收「统一入口」（只分发不合并、数据根参数化、换空根实跑验收）+ 子脚本伪交互提示（父入口给 DEVNULL 时 input() 每次吐一行垃圾）+ 报告指标口径分层（模拟数/实测数分写）+ 生成可填文件前先读解析器的格式约定（占位行要有归宿、收尾别整串 rstrip）＋ 产出侧占位要对齐下游判据的精确字面（差一个字符就静默通过）＋ 有下游官方校验器就别自造验收（跨工具引用做可选依赖）＋ 选择器的优先级用权重不用过滤（过滤会把小池子收到 1 个候选、随机性死掉；断言「两次独立序列不同」） | `references/cli-authoring-pitfalls.md` |
 | ✂️ 脚本膨胀拆分 | 单文件>400行时拆三模块：数据/可选增强/逻辑——rules+enhance+主文件；CLI 多子命令改拆「薄壳入口+模块包」（软链 sys.path/依赖方向/注册器与 lint 闭环）；需求域分化再拆多 CLI（查询/管理分入口）；归档型 skill 的 INDEX 按类分节+自动追加归节 | `references/script-splitting-pattern.md` |
 | 🐛 系统化调试 | 找根因，不下随机修（方法论 ＋ 14 份工具手册：pdb／debugpy／CDP／heap snapshot） | `references/debug.md` |
 | 🔒 预提交审查 | 安全扫描+回归+独立审查 | `references/code-review.md` |
