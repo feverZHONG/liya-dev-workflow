@@ -17,7 +17,7 @@ tier: T1  # T分级: T2=直接做 / T1=先请示 / T0=一律拒
 
 ### 多步骤/跨文件任务：PLAN.md 追踪
 
-写 `PLAN.md` 到当前 skill 目录下。**以后也要这么干。**
+写 `skills/gbf-relink/PLAN.md` 到当前 skill 目录下。**以后也要这么干。**
 
 ```
 skills/<skill-name>/PLAN.md

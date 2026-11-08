@@ -37,9 +37,9 @@ node inspect -p <pid>
 
 | 文件 | 内容 |
 |:----|:-----|
-| `references/01-overview-to-quick-reference-node-inspect-repl.md` | Overview (57行) |
-| `references/02-attaching-to-a-running-process.md` | Attaching to a Running Process (31行) |
-| `references/03-programmatic-cdp-scripting-from-terminal.md` | Programmatic CDP (scripting from terminal) (73行) |
-| `references/04-debugging-hermes-ui-tui-to-running-vitest-tests-under-the-debugger.md` | Debugging Hermes ui-tui (62行) |
-| `references/05-heap-snapshots-cpu-profiles-non-interact-to-verification-checklist.md` | Heap Snapshots & CPU Profiles (Non-interactive) (51行) |
-| `references/06-one-shot-recipes.md` | One-Shot Recipes (30行) |
+| `node-01-overview-to-quick-reference-node-inspect-repl.md` | Overview (57行) |
+| `node-02-attaching-to-a-running-process.md` | Attaching to a Running Process (31行) |
+| `node-03-programmatic-cdp-scripting-from-terminal.md` | Programmatic CDP (scripting from terminal) (73行) |
+| `node-04-debugging-hermes-ui-tui-to-running-vitest-tests-under-the-debugger.md` | Debugging Hermes ui-tui (62行) |
+| `node-05-heap-snapshots-cpu-profiles-non-interact-to-verification-checklist.md` | Heap Snapshots & CPU Profiles (Non-interactive) (51行) |
+| `node-06-one-shot-recipes.md` | One-Shot Recipes (30行) |

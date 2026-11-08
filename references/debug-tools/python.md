@@ -28,9 +28,9 @@ breakpoint()
 
 | 文件 | 内容 |
 |:----|:-----|
-| `references/01-overview-to-pdb-quick-reference.md` | Overview (52行) |
-| `references/02-recipe-1-local-breakpoint-to-recipe-3-debug-a-pytest-test.md` | Recipe 1: Local breakpoint (53行) |
-| `references/03-recipe-4-post-mortem-on-any-exception.md` | Recipe 4: Post-mortem on any exception (26行) |
-| `references/04-recipe-5-remote-debug-with-debugpy-attac.md` | Recipe 5: Remote debug with debugpy (attach to running process) (129行) |
-| `references/05-debugging-hermes-specific-processes-to-verification-checklist.md` | Debugging Hermes-specific Processes (67行) |
-| `references/06-one-shot-recipes.md` | One-Shot Recipes (33行) |
+| `python-01-overview-to-pdb-quick-reference.md` | Overview (52行) |
+| `python-02-recipe-1-local-breakpoint-to-recipe-3-debug-a-pytest-test.md` | Recipe 1: Local breakpoint (53行) |
+| `python-03-recipe-4-post-mortem-on-any-exception.md` | Recipe 4: Post-mortem on any exception (26行) |
+| `python-04-recipe-5-remote-debug-with-debugpy-attac.md` | Recipe 5: Remote debug with debugpy (attach to running process) (129行) |
+| `python-05-debugging-hermes-specific-processes-to-verification-checklist.md` | Debugging Hermes-specific Processes (67行) |
+| `python-06-one-shot-recipes.md` | One-Shot Recipes (33行) |

@@ -82,7 +82,7 @@ scripts/wwlib/         # 包：按职责拆 5 模块
 | **模块依赖方向** | 循环 import（workflow 要调 story+archive+kurobbs）| 单向分层：API 层 ← sources/archive ← story/workflow。新功能按层放对应模块，不跨层倒引用 |
 | **注册函数与 lint 联动** | 拆分后顺手发现：`register_index` 追加 INDEX 行不带 `.md` 链接 → 生成骨架后 lint 必报「未注册」 | 追加行带 `[name.md](name.md)` 链接，lint 按文件名匹配才能过。**生成器/注册器与校验器要闭环验证**——new 一个骨架 → lint → 删除，一条命令测穿 |
 
-**回归测试也要覆盖「生成→校验」闭环**：`ww new 测试角色` → `ww lint characters/测试角色.md` → 清理。比只测查询命令更能暴露注册类隐藏 bug。
+**回归测试也要覆盖「生成→校验」闭环**：`ww new 测试角色` → 「ww lint characters/测试角色.md」 → 清理。比只测查询命令更能暴露注册类隐藏 bug。
 
 ## 变体三：多 CLI 按需求域拆入口 + INDEX 分节（2026-08-29 用户指示「整多个cli来应对多个需求」）
 

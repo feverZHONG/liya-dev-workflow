@@ -29,10 +29,22 @@ tier: T1  # T分级: T2=直接做 / T1=先请示 / T0=一律拒
 
 | 语言 | 快速上手 | 详细 |
 |:----|:---------|:-----|
-| Python | `breakpoint()` → (Pdb) n/s/c/p | `references/debug-tools/python.md` |
-| Node.js | `node --inspect-brk script.js` → `node inspect` | `references/debug-tools/node.md` |
+| Python | `breakpoint()` → (Pdb) n/s/c/p | `debug-tools/python.md` |
+| Node.js | `node --inspect-brk script.js` → `node inspect` | `debug-tools/node.md` |
 
-> 2026-09-28 从独立 skill `debug` 并入（原触发位撤销）——本档管**方法论**（怎么想），下面这 14 份管**工具**（怎么敲）。
-> `references/debug-tools/` 全部清单：
-> - Python：pdb 速查｜本地断点→pytest 三个配方｜异常后验尸｜debugpy 远程附加｜Hermes 进程调试与验证清单｜一次性配方
-> - Node：inspect REPL 速查｜附加运行中进程｜CDP 脚本化｜Hermes UI-TUI 与 vitest 调试｜heap snapshot 与 CPU profile｜一次性配方
+> 2026-09-28 从独立 skill `debug` 并入（原触发位撤销）——本档管**方法论**（怎么想），下面这 12 份管**工具**（怎么敲）。2026-10-18 补上可点链接（此前只有中文清单，文件全成孤儿）。
+>
+> | 语言 | 手册 | 文件 |
+> |:--|:--|:--|
+> | Python | pdb 速查 | `debug-tools/python-01-overview-to-pdb-quick-reference.md` |
+> | Python | 本地断点→pytest 三配方 | `debug-tools/python-02-recipe-1-local-breakpoint-to-recipe-3-debug-a-pytest-test.md` |
+> | Python | 异常后验尸（post-mortem） | `debug-tools/python-03-recipe-4-post-mortem-on-any-exception.md` |
+> | Python | debugpy 远程附加 | `debug-tools/python-04-recipe-5-remote-debug-with-debugpy-attac.md` |
+> | Python | Hermes 进程调试与验证清单 | `debug-tools/python-05-debugging-hermes-specific-processes-to-verification-checklist.md` |
+> | Python | 一次性配方 | `debug-tools/python-06-one-shot-recipes.md` |
+> | Node | inspect REPL 速查 | `debug-tools/node-01-overview-to-quick-reference-node-inspect-repl.md` |
+> | Node | 附加运行中进程 | `debug-tools/node-02-attaching-to-a-running-process.md` |
+> | Node | CDP 脚本化 | `debug-tools/node-03-programmatic-cdp-scripting-from-terminal.md` |
+> | Node | Hermes UI-TUI 与 vitest | `debug-tools/node-04-debugging-hermes-ui-tui-to-running-vitest-tests-under-the-debugger.md` |
+> | Node | heap snapshot 与 CPU profile | `debug-tools/node-05-heap-snapshots-cpu-profiles-non-interact-to-verification-checklist.md` |
+> | Node | 一次性配方 | `debug-tools/node-06-one-shot-recipes.md` |
