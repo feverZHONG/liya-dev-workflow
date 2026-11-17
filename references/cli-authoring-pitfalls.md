@@ -69,11 +69,11 @@ am_tool_gen.py 生成骨架后 `grep -c "{{"` 应返回 0——占位符全替�
 
 ## 7. write_file/patch 会跟 symlink 写「真实文件」——覆盖前先 rm symlink
 
-`<cli-dir>/mmx` 这类 npm bin 是 symlink（→ `../lib/node_modules/xxx/dist/xxx.mjs`）。
-**write_file 不会写 symlink 本身，而是跟着指针直接写进真实目标文件**——2026-08-09 差点把 158KB 的 mmx-cli 官方入口覆盖成 1.5KB wrapper，靠 `npm install -g mmx-cli@1.0.18 --registry=https://registry.npmmirror.com` 重装找回（装完验证 md5 与原始一致）。
+`<npm-global>/bin/<cli>` 这类 npm bin 是 symlink（→ `../lib/node_modules/xxx/dist/xxx.mjs`）。
+**write_file 不会写 symlink 本身，而是跟着指针直接写进真实目标文件**——2026-08-09 差点把 158KB 的官方 CLI 入口覆盖成 1.5KB wrapper，靠 `npm install -g <pkg>@<version> --registry=<镜像源>` 重装找回（装完验证 md5 与原始一致）。
 
 **规则**：任何要「用文件替换 symlink」的场景，顺序必须是：
-1. `rm <cli-dir>/mmx`（先删 symlink）
+1. `rm <npm-global>/bin/<cli>`（先删 symlink）
 2. `write_file` 到 bin 路径（这次才是真建文件）
 3. `chmod +x`
 
@@ -81,13 +81,13 @@ am_tool_gen.py 生成骨架后 `grep -c "{{"` 应返回 0——占位符全替�
 
 ## 8. 子命令黑名单闸门：wrapper 替换 bin + 透传 + 提醒消息
 
-要「杜绝某 CLI 的某些子命令」时（如 mmx 生图/图生图额度禁令），用 wrapper 替换 bin，不 patch dist 源码：
+要「杜绝某 CLI 的某些子命令」时（如某生图 CLI 的额度禁令），用 wrapper 替换 bin，不 patch dist 源码：
 
 ```js
 // 骨架（node）：拦截规则匹配 cmd+sub，命中输出提醒消息 exit 2；其余透传
-const MMX_REAL = '<cli-dir>/../lib/node_modules/mmx-cli/dist/mmx.mjs';
+const CLI_REAL = '<npm-global>/lib/node_modules/<pkg>/dist/<entry>.mjs';
 for (const b of BLOCKED) if (b.match(cmd, sub)) { console.error(b.msg); process.exit(2); }
-execFileSync(process.execPath, [MMX_REAL, ...args], { stdio: 'inherit' });
+execFileSync(process.execPath, [CLI_REAL, ...args], { stdio: 'inherit' });
 ```
 
 要点：
@@ -364,6 +364,35 @@ else:
 - **同一实体多份目录时，编号解析要定优先级、并在输出里可核**：发布前建的「无号空壳目录」与收稿后的「带编号正式目录」并存时，按字母序取前者，工具报的全是旧稿的数（连段号都整体偏移，人照着改错段）。规则：解析**优先带真实编号的那份**、编号查不到就返「无」——别掉进兜底 glob（数字 `24` 撞上含 `24` 的 `cv47302459`）；`list` 同号只列一份；输出里看得出读的是哪份（报头带路径），否则人分不清在改哪份。
 
 **验收**：每个子命令至少跑一次真实调用（不是 `--help`），并专门验「指针档输入」「跨域同名输入」「空结果」三种路径。
+
+## 31. 输出开关必须可组合：`--json` 与 `-o` 同给时别在打印后 return
+
+`--json`（机读元数据）、`-o`（落文件）、`-q`（静音）是三个独立维度，写成 `if json: print(...); return` 的互斥分支就会互相吞：带 `-o --json` 跑完，stdout 有合法 JSON、退出码 0、meta 里的字数来自内存，**文件根本没写**。批量跑时六份产物全 0 字节，只有 `ls -l` 看得出来（实测）。
+
+- **结构**：落文件放在分支之外先做；`--json` 只决定 stdout 打元数据还是正文，`-q` 只决定 stderr。
+- **验收**：五种组合各跑一次并断言产物非空——`--json`、`-o`、`--json -o`、`-q`、`-q -o`；只测默认那个等于没测。
+- 同类：`--no-retry`、`--jobs` 这类控制开关也要和输出模式交叉试一次，别默认它们互不影响。
+
+## 32. 机器可读输出：第三方库会往 stdout 打广告，`--json` 先被它污染
+
+`--json` 的约定是「stdout 只有一个 JSON」，但很多库会自己 `print` 诊断/推广语：pymupdf 的 `page.find_tables()` 每调一次就往 stdout 写一行 `Consider using the pymupdf_layout package…`，于是 `--dry-run --json` 输出变成「一行提示 + JSON」，`json.loads` 当场失败（实测）。
+
+- **在库调用外层包 stdout 重定向**：`with contextlib.redirect_stdout(io.StringIO()): tabs = page.find_tables().tables`；只包那一次调用，别整段包（会吞掉自己要的输出）。
+- **同类表现**：进度条、warnings、第三方 SDK 的 banner、`print` 式 debug——凡是「别人家的库」，都假定它可能写 stdout。
+- **验收不能只看「命令跑通了」**：拿 `python3 -c "import json,sys;json.load(sys.stdin)"` 过一遍管道，或 `json.loads(subprocess.run(...).stdout)`——这是唯一能发现被污染的方法；只 eyeball 前几行会把提示行当合法开头。
+- **stderr 可以脏，stdout 必须干净**：库的提示改走 stderr（或照上面吞掉），让管道/父进程拿到的永远是可解析的一份。
+
+## 33. 媒体时长别信容器头或库自报——一律 ffprobe
+
+同一个 TTS 产出的 wav，`wave.open(p)` 的 `getnframes()/getframerate()` 算出来是 **89478 秒**，ffprobe 是 **6.84 秒**（实测）。凡是把时长当判据的地方——切段（≤120s 的接口限制）、按秒计费、交付前核时长——都走 ffprobe：
+
+```bash
+ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 file.wav
+```
+
+- 没装 ffprobe 时按 `字节数 ÷ (采样率 × 声道 × 位深/8)` 估，并在输出里标明是估算值。
+- 同类：第三方 SDK 自带的 `duration` 字段也常是「声明值」不是实测值，别拿它做切段/计费依据；报「音频 X 秒」前先跟 ffprobe 对一次。
+- 验收句式：声称时长的那一刻，同一个数在 `ffprobe` 与工具输出里必须一致，不一致先修工具再往下走。
 
 ## 通用验收清单（每个新 CLI 交付前）
 
